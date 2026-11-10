@@ -1,5 +1,7 @@
 library(tidyverse)
 library(sandwich)
+library(lmtest)
+
 
 # Import data
 house_sales <- read_csv('kc_house_data.csv')
@@ -47,11 +49,16 @@ plot(model_liv_grade_interaction, which=1)
 plot(model_liv_grade_interaction, which=2)
 plot(model_liv_grade_interaction, which=3)
 
+# Compared to the parallel lines model, the interaction term significantly increases 
+# the R^2 indicating it is worthwhile to include this term in the model
+
 model_liv_grade_water <- lm(price ~ grade*sqft_living + waterfront, house_sales)
 summary(model_liv_grade_water)
 plot(model_liv_grade_water, which=1)
 plot(model_liv_grade_water, which=2)
 plot(model_liv_grade_water, which=3)
+
+# Including the waterfront term meaningfully increases R^2
 
 model_liv_grade_water_interaction1 <- lm(price ~ grade*sqft_living + waterfront*grade, house_sales)
 summary(model_liv_grade_water_interaction1)
@@ -65,10 +72,17 @@ plot(model_liv_grade_water_interaction2, which=1)
 plot(model_liv_grade_water_interaction2, which=2)
 plot(model_liv_grade_water_interaction2, which=3)
 
+# Neither waterfront interaction terms seem to significantly improve model fit
+# For the model: price ~ grade*sqft_living + waterfront we will perform population inference
 
+robust_vcov <- vcovHC(model_liv_grade_water, type = "HC1")
+coeftest(model_liv_grade_water, vcov. = robust_vcov)
 
-
-
+ggplot(house_sales, aes(x = sqft_living, y = price, color = factor(grade))) +
+  geom_point(alpha=0.1) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Non-Parallel Lines: Interaction Between Square Footage and Grade",
+       x = "Square Footage of Living Room", y = "Price")
 
 
 
